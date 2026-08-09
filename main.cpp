@@ -3,6 +3,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <optional>
 
 template <typename T>
 
@@ -27,9 +28,17 @@ class BoundedQueue {
             not_empty.notify_one();
         }
 
-
         std::optional<T> pop(){
+            std::unique_lock<std::mutex> lock(mtx);
 
+            not_empty.wait(lock, [this]{ return container.size() > 0;});
+
+            T curr = std::move(container.front());
+            container.pop();
+
+            not_full.notify_one();
+
+            return curr;
         }
         void shutdown(){
 
@@ -46,14 +55,17 @@ int main() {
 
     std::cout << "Initializing Durable Task Engine (C++17)..." << std::endl;
     bool thread_finished = false;
+    int curr;
 
     std::thread t([&thread_finished, &queue]() {
         queue.push(123);
         queue.push(123);
         queue.push(123);
+        //thread_finished = true;
     });
 
-    std::thread t2([&thread_finished, &queue]() {
+    std::thread t2([&thread_finished, &queue, &curr]() {
+        curr = queue.pop().value();
         queue.push(123);
         thread_finished = true;
     });
