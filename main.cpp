@@ -4,6 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <optional>
+#include <chrono>
 
 template <typename T>
 
@@ -64,33 +65,8 @@ class BoundedQueue {
 
 
 int main() {
+    std::cout << "durable-task-engine" << std::endl;
+
     BoundedQueue<int> queue(3);
-
-    std::cout << "Initializing Durable Task Engine (C++17)..." << std::endl;
-    bool thread_finished = false;
-    int curr;
-
-    std::thread t([&thread_finished, &queue]() {
-        queue.push(123);
-        queue.push(123);
-        queue.push(123);
-        //thread_finished = true;
-    });
-
-    std::thread t2([&thread_finished, &queue, &curr]() {
-        curr = queue.pop().value();
-        queue.push(123);
-        thread_finished = true;
-    });
-
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-    if (thread_finished == true) {
-        std::cout << "push works" << std::endl;
-    } else {
-        std::cout << "push blocked" << std::endl;
-    }
-
-    t.join();
     return 0;
 }
