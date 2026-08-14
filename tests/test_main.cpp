@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <atomic>
 #include <thread>
-#include "../BoundedQueue.h"   // adjust path to wherever the class lives
+#include "BoundedQueue.h"   // adjust path to wherever the class lives
 
 TEST(BoundedQueue, PushThenPopReturnsSameValue) {
     BoundedQueue<int> q(4);
