@@ -2,6 +2,7 @@
 #include <atomic>
 #include <thread>
 #include "BoundedQueue.h"   // adjust path to wherever the class lives
+#include "ThreadPool.h"
 
 TEST(BoundedQueue, PushThenPopReturnsSameValue) {
     BoundedQueue<int> q(4);
@@ -42,4 +43,19 @@ TEST(BoundedQueue, PopOnEmptyShutdownQueueReturnsNullopt) {
     BoundedQueue<int> q(4);
     q.shutdown();
     EXPECT_FALSE(q.pop().has_value());
+}
+
+TEST(ThreadPool, ExecuteAllSubmittedTasks){
+    const int total_tasks = 100;
+    std::atomic<int> counter{0};
+    {
+        ThreadPool pool(4);
+        for (int i = 0; i < total_tasks; ++i) {
+            bool accepted = pool.submit([&counter]() {
+                counter.fetch_add(1, std::memory_order_relaxed);
+            });
+            EXPECT_TRUE(accepted);
+        }
+    }  
+    EXPECT_EQ(counter.load(), total_tasks);
 }
