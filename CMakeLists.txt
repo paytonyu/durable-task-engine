@@ -27,3 +27,6 @@ target_link_libraries(unit_tests gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(unit_tests)
+
+target_include_directories(durable_task_engine PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(unit_tests PRIVATE ${CMAKE_SOURCE_DIR}/include)

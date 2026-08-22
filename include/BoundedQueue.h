@@ -1,5 +1,10 @@
 #pragma once // protects compiler from reading it twice and duplicating class definition
 
+
+// This class is a thread-safe queue with a maximum capacity,
+// allowing multiple threads to safely push and pop without
+// exceeding capacity or accessing the queue at the same time.\
+
 template <typename T>
 
 class BoundedQueue {
@@ -14,15 +19,15 @@ class BoundedQueue {
     public:
         BoundedQueue(size_t x): capacity{x}{}
         ~BoundedQueue(){shutdown();}
-        bool push(const T& insert){
-            std::unique_lock<std::mutex> lock(mtx);
+        bool push(const T& insert){  // insert not modified
+            std::unique_lock<std::mutex> lock(mtx); // in every method, stops multiple threads from accessing at same time
 
-            not_full.wait(lock, [this]{ return (container.size() < capacity || stopping);});    
+            not_full.wait(lock, [this]{ return (container.size() < capacity || stopping);}); // wait until queue has space OR queue is shutting down
             if (stopping){
                 return false;
             }
             container.push(insert);
-            not_empty.notify_one();
+            not_empty.notify_one(); // notifies ONE thread that something has been pushed, if it is waiting to pop()
             return true;
         }
 
@@ -32,22 +37,22 @@ class BoundedQueue {
             not_empty.wait(lock, [this]{ return (container.size() > 0 || stopping);});
 
             if(container.size() > 0){
-                T curr = std::move(container.front());
-                container.pop();
-                not_full.notify_one();
+                T curr = std::move(container.front()); // std::move to 
+                container.pop(); 
+                not_full.notify_one(); //notify one thread that something has been popped
                 return curr;
             }
-            return std::nullopt;
+            return std::nullopt; // no item
         }
         void shutdown(){
             std::unique_lock<std::mutex> lock(mtx);
-            if (stopping == true){
+            if (stopping == true){ // if already stopping just return
                 return;
             }
 
             stopping = true;
             lock.unlock(); // unlocking before notifying avoids woken thread block on held lock
-            not_full.notify_all();
+            not_full.notify_all(); // tell all threads the queue is shutting down
             not_empty.notify_all();
         }
         size_t size() const{
