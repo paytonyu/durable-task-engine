@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <atomic>
 #include <thread>
+#include <algorithm>
 #include "BoundedQueue.h"   // adjust path to wherever the class lives
 #include "ThreadPool.h"
 
@@ -58,4 +59,57 @@ TEST(ThreadPool, ExecuteAllSubmittedTasks){
         }
     }  
     EXPECT_EQ(counter.load(), total_tasks);
+}
+
+TEST(BoundedQueue, StressMultiProducerMultiConsumer) {
+    const int kProducers = 4;
+    const int kConsumers = 4;
+    const int kPerProducer = 25000;
+
+    BoundedQueue<int> q(64);  
+
+    std::vector<std::thread> producers;
+    std::vector<std::thread> consumers;
+    std::vector<std::vector<int>> consumed(kConsumers);  
+
+    for (int i = 0; i < kConsumers; i++){
+        consumers.emplace_back([&, i](){
+            while (auto item = q.pop()) {
+                consumed[i].push_back(*item);
+            }
+        });
+    }
+
+    for (int p = 0; p < kProducers; p++){
+        producers.emplace_back([&q, p](){
+            for (int i = 0; i < kPerProducer; i++){
+                q.push(p * kPerProducer + i);
+            }
+        });
+    }
+
+    for (auto& t : producers) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+
+    q.shutdown();
+
+    for (auto& t : consumers) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    
+    std::vector<int> all;
+    for (const auto& bucket : consumed) {
+        all.insert(all.end(), bucket.begin(), bucket.end());
+    }
+    std::sort(all.begin(), all.end());
+
+    ASSERT_EQ(all.size(), static_cast<size_t>(kProducers * kPerProducer));
+    for (size_t i = 0; i < all.size(); i++) {
+        ASSERT_EQ(all[i], static_cast<int>(i));
+    }
 }
