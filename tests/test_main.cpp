@@ -113,3 +113,14 @@ TEST(BoundedQueue, StressMultiProducerMultiConsumer) {
         ASSERT_EQ(all[i], static_cast<int>(i));
     }
 }
+
+TEST(BoundedQueue, ShutdownDrainsRemainingItems) {
+    BoundedQueue<int> q(4);
+    q.push(1);
+    q.push(2);
+    q.shutdown();
+
+    EXPECT_EQ(q.pop().value(), 1);
+    EXPECT_EQ(q.pop().value(), 2);
+    EXPECT_FALSE(q.pop().has_value());
+}
