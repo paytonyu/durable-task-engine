@@ -1,5 +1,8 @@
 #pragma once // protects compiler from reading it twice and duplicating class definition
-
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <optional>
 
 // This class is a thread-safe queue with a maximum capacity,
 // allowing multiple threads to safely push and pop without
