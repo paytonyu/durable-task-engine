@@ -3,7 +3,7 @@
 
 // This class is a thread-safe queue with a maximum capacity,
 // allowing multiple threads to safely push and pop without
-// exceeding capacity or accessing the queue at the same time.\
+// exceeding capacity or accessing the queue at the same time.
 
 template <typename T>
 
